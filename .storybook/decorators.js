@@ -2,45 +2,7 @@ import { action } from '@storybook/addon-actions';
 import algoliasearch from 'algoliasearch/lite';
 import instantsearch from '../src/index';
 
-export const withHits = (storyFn, searchOptions = {}) => () => {
-  const {
-    appId = 'latency',
-    apiKey = '6be0576ff61c053d5f9a3225e2a90f76',
-    indexName = 'instant_search',
-    searchParameters = {},
-    ...instantsearchOptions
-  } = searchOptions;
-
-  const urlLogger = action('Routing state');
-  const search = instantsearch({
-    indexName,
-    searchClient: algoliasearch(appId, apiKey),
-    searchParameters: {
-      hitsPerPage: 4,
-      attributesToSnippet: ['description:15'],
-      snippetEllipsisText: '[…]',
-      ...searchParameters,
-    },
-    routing: {
-      router: {
-        write: routeState => {
-          urlLogger(JSON.stringify(routeState, null, 2));
-        },
-        read: () => ({}),
-        createURL: () => '',
-        onUpdate: () => {},
-      },
-    },
-    ...instantsearchOptions,
-  });
-
-  const containerElement = document.createElement('div');
-
-  // Add the preview container to add the stories in
-  const previewElement = document.createElement('div');
-  previewElement.classList.add('container', 'container-preview');
-  containerElement.appendChild(previewElement);
-
+const withPlaygound = ({ containerElement, search }) => {
   // Add the playground container to add widgets into
   const playgroundElement = document.createElement('div');
   playgroundElement.classList.add('container', 'container-playground');
@@ -140,24 +102,24 @@ export const withHits = (storyFn, searchOptions = {}) => () => {
       container: hits,
       templates: {
         item: `
-<div
-  class="hits-image"
-  style="background-image: url({{image}})"
-></div>
-<article>
-  <header>
-    <strong>{{#helpers.highlight}}{ "attribute": "name" }{{/helpers.highlight}}</strong>
-  </header>
-  <p>
-    {{#helpers.snippet}}{ "attribute": "description" }{{/helpers.snippet}}
-  </p>
-  <footer>
-    <p>
-      <strong>{{price}}$</strong>
-    </p>
-  </footer>
-</article>
-          `,
+          <div
+            class="hits-image"
+            style="background-image: url({{image}})"
+          ></div>
+          <article>
+            <header>
+              <strong>{{#helpers.highlight}}{ "attribute": "name" }{{/helpers.highlight}}</strong>
+            </header>
+            <p>
+              {{#helpers.snippet}}{ "attribute": "description" }{{/helpers.snippet}}
+            </p>
+            <footer>
+              <p>
+                <strong>{{price}}$</strong>
+              </p>
+            </footer>
+          </article>
+        `,
       },
       cssClasses: {
         item: 'hits-item',
@@ -173,6 +135,53 @@ export const withHits = (storyFn, searchOptions = {}) => () => {
       container: pagination,
     })
   );
+};
+
+export const withHits = (storyFn, searchOptions = {}) => () => {
+  const {
+    appId = 'latency',
+    apiKey = '6be0576ff61c053d5f9a3225e2a90f76',
+    indexName = 'instant_search',
+    searchParameters = {},
+    ...instantsearchOptions
+  } = searchOptions;
+
+  const urlLogger = action('Routing state');
+  const search = instantsearch({
+    indexName,
+    searchClient: algoliasearch(appId, apiKey, {
+      _useRequestCache: true,
+    }),
+    searchParameters: {
+      hitsPerPage: 4,
+      attributesToSnippet: ['description:15'],
+      snippetEllipsisText: '[…]',
+      ...searchParameters,
+    },
+    routing: {
+      router: {
+        write: routeState => {
+          urlLogger(JSON.stringify(routeState, null, 2));
+        },
+        read: () => ({}),
+        createURL: () => '',
+        onUpdate: () => {},
+      },
+    },
+    ...instantsearchOptions,
+  });
+
+  const containerElement = document.createElement('div');
+
+  // Add the preview container to add the stories in
+  const previewElement = document.createElement('div');
+  previewElement.classList.add('container', 'container-preview');
+  containerElement.appendChild(previewElement);
+
+  withPlaygound({
+    containerElement,
+    search,
+  });
 
   storyFn({
     container: previewElement,
